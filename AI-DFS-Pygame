@@ -1,0 +1,199 @@
+from matplotlib.pyplot import grid
+import pygame
+from random import choice
+# index = i + j*cols
+RES = WIDTH, HEIGHT = 220, 440
+TILE = 10
+cols, rows = WIDTH // TILE, HEIGHT // TILE
+
+pygame.init()
+sc = pygame.display.set_mode(RES)
+clock = pygame.time.Clock()
+
+class Cell:
+    def __init__(self, x, y):
+        self.x, self.y = x, y
+        self.walls = {'top': True, 'right': True, 'bottom': True, 'left': True} 
+        self.visited = False
+        self.isObtacle = False
+        self.isStart = False
+        self.isGoal = False
+    
+    def setObtacle(self, isObtacle):
+        self.isObtacle = isObtacle
+    def setStart(self, isStart):
+        self.isStart = isStart
+    def setGoal(self, isGoal):
+        self.isGoal = isGoal
+    # paint the current cell
+    def draw_curent_cell(self):
+        x, y =self.x * TILE, self.y * TILE
+        pygame.draw.rect(sc, pygame.Color('yellow'), (x +2, y+2, TILE -2 , TILE-2))  # left, top, width, height; +2 de ve dung y khong lech :))
+    
+    def draw(self):
+        x, y = self.x * TILE, self.y *TILE
+        
+        # tô màu cho obtacle
+        if self.isObtacle == True:
+            pygame.draw.rect(sc, pygame.Color('gray'), (x, y, TILE, TILE))
+        elif self.isStart == True:
+            pygame.draw.rect(sc, pygame.Color('pink'), (x, y, TILE, TILE))
+        elif self.isGoal == True:
+            pygame.draw.rect(sc, pygame.Color('pink'), (x, y, TILE, TILE))
+        
+        # tô màu cho điểm mới thăm
+        if self.visited:
+            pygame.draw.rect(sc, pygame.Color('black'), (x, y, TILE, TILE))
+            
+        # vẽ tường draw lines
+        if self.walls['top']:
+            pygame.draw.line(sc, pygame.Color('darkorange'), (x,y), (x + TILE, y), 2)
+        if self.walls['right']:
+            pygame.draw.line(sc, pygame.Color('darkorange'), (x + TILE,y), (x + TILE, y + TILE), 2)
+        if self.walls['bottom']:
+            pygame.draw.line(sc, pygame.Color('darkorange'), (x + TILE,y + TILE), (x + TILE, y + TILE), 2)
+        if self.walls['left']:
+            pygame.draw.line(sc, pygame.Color('darkorange'), (x,y + TILE), (x, y), 2)
+    
+    def check_cell(self, x, y):
+        # return a Cell by coordinates (x,y)
+        find_index = lambda x, y: x + y *num_cols # index
+        if (x < 0 or x > num_cols - 1 or y < 0 or y > num_rows - 1):
+            return False
+        return grid_cells[find_index(x,y)]
+    
+    def check_neighbors(self):
+        neighbors = []
+        top = self.check_cell(self.x, self.y - 1)
+        right = self.check_cell(self.x + 1, self.y)
+        bottom = self.check_cell(self.x, self.y + 1)
+        left = self.check_cell(self.x - 1, self.y)
+        if top and not top.visited and top.isObtacle == False:
+            neighbors.append(top)
+        if right and not right.visited and right.isObtacle == False:
+            neighbors.append(right)
+        if bottom and not bottom.visited and bottom.isObtacle == False:
+            neighbors.append(bottom)
+        if left and not left.visited and left.isObtacle == False:
+            neighbors.append(left)
+        return choice(neighbors) if neighbors else False   
+    def __str__(self):
+        if self.isObtacle == True:
+            return 'X'
+        else: return '-'
+
+def remove_walls(current, next):
+    dx = current.x - next.x
+    if dx == 1:
+        current.walls['left'] = False
+        next.walls['right'] = False
+    elif dx == -1:
+        current.walls['right'] = False
+        next.walls['left'] = False
+    dy = current.y- next.y
+    if dy == 1:
+        current.walls['top'] = False
+        next.walls['bottom'] = False
+    elif dy == -1:
+        current.walls['bottom'] = False
+        next.walls['top'] = False
+# store cells #! new code
+
+with open('maze_map.txt', 'w') as outfile:
+    # outfile.write('2\n')
+    # outfile.write('3 6 -3\n')
+    # outfile.write('5 14 -1\n')
+    outfile.write('0\n')
+    outfile.write('xxxxxxxxxxxxxxxxxxxxxx\n')
+    outfile.write('x   x   xx xx        x\n')
+    outfile.write('x     x     xxxxxxxxxx\n')
+    outfile.write('x x    xx  xxxx xxx xx\n')
+    outfile.write('  x   x x xx   xxxx  x\n')
+    outfile.write('x          xx  xx  x x\n')
+    outfile.write('xxxxxxx x      xx  x x\n')
+    outfile.write('xxxxxxxxx  x x  xx   x\n')
+    outfile.write('x          x x Sx x  x\n')
+    outfile.write('xxxxx x  x x x     x x\n')
+    outfile.write('xxxxxxxxxxxxxxxxxxxxxx')
+
+def read_file(file_name: str = 'maze_map.txt'):
+    f=open(file_name,'r')
+    num = int(next(f)[:-1])
+    text=f.read()
+    
+    matrix = [list(i) for i in text.splitlines()]
+    f.close()
+    return matrix
+
+# tao maze
+# createMapFile()
+matrix= read_file()
+num_rows = len(matrix)
+num_cols = len(matrix[0])
+print(num_rows, num_cols)
+
+print(type(matrix))
+
+grid_cells = [Cell(col, row) for row in range(num_rows) for col in range(num_cols)]
+print(len(grid_cells))
+print('grid_cells')
+for i in range(num_rows):
+    for j in range(num_cols):
+        find_index = lambda x, y: x * num_cols + y  # index
+        print('idx', find_index(i,j), end = ' ')
+        print(grid_cells[find_index(i,j)], end = ' ')
+    print()
+
+for i in range(num_rows):
+    for j in range(num_cols):
+        
+        find_index = lambda x, y: x * num_cols + y# index
+        # print(grid_cells[find_index(i,j)].isObtacle)
+        if matrix[i][j] == 'x':
+            grid_cells[find_index(i,j)].setObtacle(True)
+        elif matrix[i][j] == 'S':
+            current_cell = grid_cells[find_index(i,j)]
+            grid_cells[find_index(i,j)].setStart(True)
+        elif matrix[i][j]==' ':
+            if (i==0) or (i==len(matrix)-1) or (j==0) or (j==len(matrix[0])-1):
+                print('Goal is here-----:',find_index(i,j))
+                grid_cells[find_index(i,j)].setGoal(True)
+                if grid_cells[find_index(i,j)].isGoal:
+                    print('isGoal')
+        else:
+            continue    
+
+# store cells
+print(current_cell.isStart)
+
+#current_cell = grid_cells[0]
+stack = []
+            
+running = True            
+while running:
+    sc.fill(pygame.Color('darkslategray'))
+    
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        if running == False:
+            exit()
+            
+            
+    # Vẽ grid
+    [cell.draw() for cell in grid_cells]
+    current_cell.visited = True
+    current_cell.draw_curent_cell()
+    
+    next_cell = current_cell.check_neighbors()
+    if current_cell.isGoal == False:
+        if next_cell:
+            next_cell.visited = True
+            stack.append(current_cell)   #!DFS
+            # remove_walls(current_cell, next_cell)
+            current_cell = next_cell
+        elif stack:                      #!DFS
+            current_cell = stack.pop()
+            
+    pygame.display.flip()
+    clock.tick(30)
